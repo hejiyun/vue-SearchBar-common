@@ -108,6 +108,13 @@
                   <el-checkbox v-model="params[option.name]" :label="option.placeholder||'请填写'" class="move-left-50-percent"/>
                 </el-form-item>
               </el-col>
+              <el-col v-if="option.type==='radio'" :span="WidthNumber" class="search-bar-col" >
+                <el-form-item :label="option.label">
+                  <el-radio-group v-model="params[option.name]">
+                    <el-radio v-for="(item, index) in option.radioList" :key="index" :label="item.value">{{ item.label }}</el-radio>
+                  </el-radio-group>
+                </el-form-item>
+              </el-col>
               <el-col v-if="option.type==='textArea'" :span="WidthNumber" class="search-bar-col" >
                 <el-col :span="10" class="text-right">
                   <el-radio-group v-model="option['checkValue']">
