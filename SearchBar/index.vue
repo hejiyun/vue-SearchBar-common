@@ -1,7 +1,7 @@
 <template>
   <!-- 文档 -->
   <div class="search-bar">
-    <el-form ref="ruleForm" :label-width="`${labelWidth}px`" label-position="right">
+    <el-form ref="SearchRuleForm" :model="params" :label-width="`${labelWidth}px`" label-position="right">
       <el-row @keyup.13="search">
         <el-col :span="24">
           <el-row :gutter="20">
@@ -10,8 +10,14 @@
               :key="index">
               <el-col v-if="option.type==='select'" :span="WidthNumber" class="search-bar-col">
                 <!--下拉选择-->
-                <el-form-item :label="option.label">
+                <el-form-item
+                  :label="option.label"
+                  :prop="option.name"
+                  :rules="option.rules ? {
+                    required: true, message: option.rulesMsg || '请选择对应选项', trigger: 'change'
+                } : []">
                   <el-select
+                    :disabled="option.disabled"
                     :multiple="option.multiple"
                     v-model="params[option.name]"
                     :placeholder="option.placeholder||'全部'"
@@ -21,9 +27,10 @@
                     clearable
                     @change="option.multiple ? selectAll($event, option.options, option.name) : function(){}"
                   >
-                    <el-option v-if="option.multiple && option.options.length > 0" label="全部" value="选项0"/>
+                    <el-option v-show="option.multiple && option.options.length > 0" label="全部" value="选项0"/>
                     <el-option
                       v-for="(item, index) in option.options"
+                      v-if="index < 100"
                       :label="item.label"
                       :value="item.value"
                       :key="index"/>
@@ -32,8 +39,14 @@
               </el-col>
               <el-col v-if="option.type==='lazySelect'" :span="WidthNumber" class="search-bar-col">
                 <!--下拉选择-->
-                <el-form-item :label="option.label">
+                <el-form-item
+                  :label="option.label"
+                  :prop="option.name"
+                  :rules="option.rules ? {
+                    required: true, message: option.rulesMsg || '请选择对应选项', trigger: 'blur'
+                } : []">
                   <el-select
+                    :disabled="option.disabled"
                     v-model="params[option.name]"
                     :ref="`${option.name}-tags`"
                     :remote-method="(query)=>{remoteMethod(query, option)}"
@@ -54,13 +67,17 @@
                         <span>{{ item }}</span>
                       </el-col>
                     </el-option>
+                    <!-- 由于element-ui内部渲染机制包含动画过渡,在单线程的前提下, 每次的动画时间都会叠加, 当数据量过大时
+                    动画时长叠加会比较长, 就会造成卡慢效果, 使用v-if限制渲染过多, 或者直接使用v-show,只渲染一次,通
+                    过元素显示隐藏来达到效果 -->
                     <el-option
-                      v-for="item in option.optionFilterList"
+                      v-for="(item, Index) in option.optionFilterList"
+                      v-if="Index < 100"
                       :key="item.value"
                       :label="item.label"
                       :value="item.value"
                       :class="option['noCheck'] ? `` : 'hidden-checkmark'">
-                      <el-checkbox v-if="!option.noCheck" v-model="item.isSelect" class="position-checkBox"/>
+                      <el-checkbox v-if="!option.noCheck" :rulses="''" v-model="item.isSelect" class="position-checkBox"/>
                       <el-col v-for="(Field, index) in (option.optionHeaderCode ? option.optionHeaderCode : ['value', 'label'])" :span="option.optionHeaderWidthSpan || 12" :key="index" class="information-title">
                         <span>{{ item[Field] }}</span>
                       </el-col>
@@ -70,8 +87,14 @@
               </el-col>
               <el-col v-if="option.type==='date'" :span="WidthNumber" class="search-bar-col">
                 <!--时间单选-->
-                <el-form-item :label="option.label">
+                <el-form-item
+                  :label="option.label"
+                  :prop="option.name"
+                  :rules="option.rules ? {
+                    required: true, message: option.rulesMsg || '请选择时间区段', trigger: 'blur'
+                } : []">
                   <el-date-picker
+                    :disabled="option.disabled"
                     v-model="params[option.name]"
                     :placeholder="option.placeholder||'选择日期'"
                     :value-format="option.valueFormat || 'yyyy-MM-dd HH:mm:ss'"
@@ -82,11 +105,14 @@
               </el-col>
               <el-col v-if="option.type==='daterange'" :span="WidthNumber" class="search-bar-col">
                 <!--时间范围选择-->
-                <el-form-item :label="option.label">
+                <el-form-item
+                  :label="option.label"
+                >
                   <el-date-picker
+                    :disabled="option.disabled"
                     v-model="params[option.name]"
                     :picker-options="pickerOptions"
-                    :default-value="options.defaultValue ? options.defaultValue : ''"
+                    :default-value="option.defaultValue ? option.defaultValue : false"
                     :default-time="['00:00:00', '23:59:59']"
                     :value-format="option.valueFormat || 'yyyy-MM-dd HH:mm:ss'"
                     :class="option.className ? `${option.className} width-one-hundred-percent` : 'width-one-hundred-percent'"
@@ -96,20 +122,36 @@
                 </el-form-item>
               </el-col>
               <el-col v-if="option.type==='input'" :span="WidthNumber" class="search-bar-col" >
-                <el-form-item :label="option.label">
+                <el-form-item
+                  :label="option.label"
+                  :prop="option.name"
+                  :rules="option.rules ? {
+                    required: true, message: option.rulesMsg || '请输入对应内容', trigger: 'blur'
+                } : {}">
                   <el-input
+                    :disabled="option.disabled"
                     v-model="params[option.name]"
                     :placeholder="option.placeholder||'请填写'"
                     clearable/>
                 </el-form-item>
               </el-col>
               <el-col v-if="option.type==='checkbox'" :span="WidthNumber" class="search-bar-col" >
-                <el-form-item :label="option.label">
-                  <el-checkbox v-model="params[option.name]" :label="option.placeholder||'请填写'" class="move-left-50-percent"/>
+                <el-form-item
+                  :label="option.label"
+                  :prop="option.name"
+                  :rules="option.rules ? {
+                    required: true, message: option.rulesMsg || '请选择至少一项', trigger: 'blur'
+                } : {}">
+                  <el-checkbox :disabled="option.disabled" v-model="params[option.name]" :label="option.placeholder||'请填写'" class="move-left-50-percent"/>
                 </el-form-item>
               </el-col>
               <el-col v-if="option.type==='radio'" :span="WidthNumber" class="search-bar-col" >
-                <el-form-item :label="option.label">
+                <el-form-item
+                  :label="option.label"
+                  :prop="option.name"
+                  :rules="option.rules ? {
+                    required: true, message: option.rulesMsg || '请选择其中一项', trigger: 'blur'
+                } : {}">
                   <el-radio-group v-model="params[option.name]">
                     <el-radio v-for="(item, index) in option.radioList" :key="index" :label="item.value">{{ item.label }}</el-radio>
                   </el-radio-group>
@@ -122,15 +164,23 @@
                   </el-radio-group>
                 </el-col>
                 <el-col :span="14">
-                  <el-input
-                    :autosize="{ minRows: option.minRows || 1, maxRows: option.maxRows || 3 }"
-                    v-model="params[option.name]"
-                    :placeholder="option.placeholder || `可批量输入 以英文逗号隔开`"
-                    class="searche-bar-showInput"
-                    type="textarea"
-                    @focus="changeTextZIndex"
-                    @blur="changeTextZIndex"
-                    @keyup.native="convertChineseComma(option)"/>
+                  <el-form-item
+                    :prop="option.name"
+                    :rules="option.rules ? {
+                      required: true, message: option.rulesMsg || '请输入对应内容', trigger: 'blur'
+                    } : {}"
+                    label-width="0">
+                    <el-input
+                      :disabled="option.disabled"
+                      :autosize="{ minRows: option.minRows || 1, maxRows: option.maxRows || 3 }"
+                      v-model="params[option.name]"
+                      :placeholder="option.placeholder || `可批量输入 以英文逗号隔开`"
+                      class="searche-bar-showInput"
+                      type="textarea"
+                      @focus="changeTextZIndex"
+                      @blur="changeTextZIndex"
+                      @keyup.native="convertChineseComma(option)"/>
+                  </el-form-item>
                 </el-col>
               </el-col>
             </div>
@@ -294,15 +344,16 @@ export default {
   },
   async created() {
     this.options.forEach((item) => {
-      this.$set(this.params, item.name, '')
+      if ((item.type === 'lazySelect' && item.multiple) || (item.type === 'select' && item.multiple)) {
+        this.$set(this.params, item.name, [])
+      } else if (item.type === 'daterange' && item.defaultValue) {
+        this.$set(this.params, item.name, item.defaultValue)
+      } else {
+        this.$set(this.params, item.name, '')
+      }
     })
   },
   mounted() {
-    this.options.map((v, i) => {
-      if (v.defaultValue) {
-        this.$set(this.params, v.name, v.defaultValue)
-      }
-    })
     // 接收this.helpSelect, 将this.options进行遍历
     // 通过type类型判断, 将helpSelect中的对应值赋值到this.options中
     // 这里简单的使用一个延时器,让赋值操作放到队列最后, 这是因为vue对于对象数组无法实现深入式响应
@@ -621,9 +672,14 @@ export default {
     },
     // 点击查询调用函数
     search() {
-      const params = this.dealParams(params)
-      console.log(params)
-      this.$emit('search', params)
+      this.$refs['SearchRuleForm'].validate((valid) => {
+        if (valid) {
+          const params = this.dealParams(params)
+          this.$emit('search', params)
+        } else {
+          return false
+        }
+      })
     },
     // 点击导入函数
     importExcel() {
@@ -667,15 +723,12 @@ export default {
     },
     // 重置搜索栏表单
     resetForm() {
-      for (var k in this.params) {
-        // 如果是数组, 重置为空数组
-        if (this.params[k] instanceof Array) {
-          this.params[k] = []
-        } else if (this.params[k] instanceof Object) {
-          // 一般不会出现集合形式的参数
-          this.params[k] = {}
-        } else {
-          this.params[k] = ''
+      this.$refs['SearchRuleForm'].resetFields()
+      for (var k in this.defaultParams) {
+        for (var e in this.params) {
+          if (k === e) {
+            this.params[e] = this.defaultParams[k]
+          }
         }
       }
     },
