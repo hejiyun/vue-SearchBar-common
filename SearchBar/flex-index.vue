@@ -1,21 +1,21 @@
 <template>
   <!-- 文档 -->
   <div class="search-bar">
-    <el-form ref="SearchRuleForm" :model="params" :label-width="`${labelWidth}px`" label-position="right">
-      <el-row @keyup.13="search">
-        <el-col :span="24">
-          <el-row :gutter="20">
+    <el-form ref="SearchRuleForm" :model="params">
+          <el-row class="flexBox">
             <div
               v-for="(option, index) in options"
-              :key="index">
-              <el-col v-if="option.type==='select'" :span="WidthNumber" class="search-bar-col">
+              :key="index"
+              class="flexBoxItem">
+              <el-col v-if="option.type==='select'" class="search-bar-col">
                 <!--下拉选择-->
                 <el-form-item
                   :label="option.label"
                   :prop="option.name"
                   :rules="option.rules ? {
                     required: true, message: option.rulesMsg || '请选择对应选项', trigger: 'change'
-                } : []">
+                } : []"
+                style = "display: flex">
                   <el-select
                     :disabled="option.disabled"
                     :multiple="option.multiple"
@@ -37,14 +37,15 @@
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col v-if="option.type==='lazySelect'" :span="WidthNumber" class="search-bar-col">
+              <el-col v-if="option.type==='lazySelect'" class="search-bar-col">
                 <!--下拉选择-->
                 <el-form-item
                   :label="option.label"
                   :prop="option.name"
                   :rules="option.rules ? {
                     required: true, message: option.rulesMsg || '请选择对应选项', trigger: 'blur'
-                } : []">
+                } : []"
+                style = "display: flex">
                   <el-select
                     :disabled="option.disabled"
                     v-model="params[option.name]"
@@ -85,14 +86,15 @@
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col v-if="option.type==='date'" :span="WidthNumber" class="search-bar-col">
+              <el-col v-if="option.type==='date'" class="search-bar-col">
                 <!--时间单选-->
                 <el-form-item
                   :label="option.label"
                   :prop="option.name"
                   :rules="option.rules ? {
                     required: true, message: option.rulesMsg || '请选择时间区段', trigger: 'blur'
-                } : []">
+                } : []"
+                style = "display: flex">
                   <el-date-picker
                     :disabled="option.disabled"
                     v-model="params[option.name]"
@@ -103,10 +105,11 @@
                     type="datetime"/>
                 </el-form-item>
               </el-col>
-              <el-col v-if="option.type==='daterange'" :span="WidthNumber" class="search-bar-col">
+              <el-col v-if="option.type==='daterange'" class="search-bar-col">
                 <!--时间范围选择-->
                 <el-form-item
                   :label="option.label"
+                  style = "display: flex"
                 >
                   <el-date-picker
                     :disabled="option.disabled"
@@ -121,13 +124,14 @@
                     end-placeholder="结束日期"/>
                 </el-form-item>
               </el-col>
-              <el-col v-if="option.type==='input'" :span="WidthNumber" class="search-bar-col" >
+              <el-col v-if="option.type==='input'" class="search-bar-col" >
                 <el-form-item
                   :label="option.label"
                   :prop="option.name"
                   :rules="option.rules ? {
                     required: true, message: option.rulesMsg || '请输入对应内容', trigger: 'blur'
-                } : {}">
+                } : {}"
+                style = "display: flex">
                   <el-input
                     :disabled="option.disabled"
                     v-model="params[option.name]"
@@ -135,29 +139,41 @@
                     clearable/>
                 </el-form-item>
               </el-col>
-              <el-col v-if="option.type==='checkbox'" :span="WidthNumber" class="search-bar-col" >
+              <el-col v-if="option.type==='checkbox'" class="search-bar-col" >
                 <el-form-item
                   :label="option.label"
                   :prop="option.name"
                   :rules="option.rules ? {
                     required: true, message: option.rulesMsg || '请选择至少一项', trigger: 'blur'
-                } : {}">
-                  <el-checkbox :disabled="option.disabled" v-model="params[option.name]" :label="option.placeholder||'请填写'" class="move-left-50-percent"/>
+                } : {}"
+                style = "display: flex">
+                  <el-checkbox :disabled="option.disabled" v-model="params[option.name]" :label="option.placeholder||'请填写'"/>
                 </el-form-item>
               </el-col>
-              <el-col v-if="option.type==='radio'" :span="WidthNumber" class="search-bar-col" >
+              <el-col v-if="option.type==='radio'" class="search-bar-col" >
+                <el-form-item
+                  :label="option.label"
+                  :prop="option.name"
+                  :rules="option.rules ? {
+                    required: true, message: option.rulesMsg || '请选择其中一项', trigger: 'blur'
+                } : {}"
+                style = "display: flex">
+                  <el-radio-group v-model="params[option.name]">
+                    <el-radio v-for="(item, index) in option.radioList" :key="index" :label="item.value">{{ item.label }}</el-radio>
+                  </el-radio-group>
+                </el-form-item>
+              </el-col>
+               <el-col v-if="option.type==='operation'" :span="WidthNumber" class="search-bar-col" >
                 <el-form-item
                   :label="option.label"
                   :prop="option.name"
                   :rules="option.rules ? {
                     required: true, message: option.rulesMsg || '请选择其中一项', trigger: 'blur'
                 } : {}">
-                  <el-radio-group v-model="params[option.name]">
-                    <el-radio v-for="(item, index) in option.radioList" :key="index" :label="item.value">{{ item.label }}</el-radio>
-                  </el-radio-group>
+                  <slot :params="params" :name="option.name"/>
                 </el-form-item>
               </el-col>
-              <el-col v-if="option.type==='textArea'" :span="WidthNumber" class="search-bar-col" >
+              <el-col v-if="option.type==='textArea'" class="search-bar-col" >
                 <el-col :span="10" class="text-right">
                   <el-radio-group v-model="option['checkValue']">
                     <el-radio-button v-for="(item, index) in option.radioList" :key="index" :label="`${item.value}`" :style="`width:${100 / option.radioList.length}%`">{{ `${item.label}` }}</el-radio-button>
@@ -192,8 +208,6 @@
             <!-- 插槽, 允许自定义插入按钮, params为传递值, name为父组件中定义插入template名称 使用slot属性插入, slot-scope获取值 -->
             <slot :params="params" name="btn"/>
           </el-row>
-        </el-col>
-      </el-row>
     </el-form>
     <div v-show="false">
       <form ref="myform" :action="`${exportOptions.url}`" :method="`${exportOptions.method}`">
@@ -813,4 +827,13 @@ export default {
   .searche-bar-showInput {
     z-index: 999;
   }
+  .flexBox {
+   display: flex;
+   flex-wrap: wrap;
+   padding: 5px 0;
+ }
+ .flexBoxItem {
+     padding-left: 5px;
+   height: 30px;
+ }
 </style>

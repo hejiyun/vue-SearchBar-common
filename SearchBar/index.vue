@@ -157,6 +157,16 @@
                   </el-radio-group>
                 </el-form-item>
               </el-col>
+              <el-col v-if="option.type==='operation'" :span="WidthNumber" class="search-bar-col" >
+                <el-form-item
+                  :label="option.label"
+                  :prop="option.name"
+                  :rules="option.rules ? {
+                    required: true, message: option.rulesMsg || '请选择其中一项', trigger: 'blur'
+                } : {}">
+                  <slot :params="params" :name="option.name"/>
+                </el-form-item>
+              </el-col>
               <el-col v-if="option.type==='textArea'" :span="WidthNumber" class="search-bar-col" >
                 <el-col :span="10" class="text-right">
                   <el-radio-group v-model="option['checkValue']">
